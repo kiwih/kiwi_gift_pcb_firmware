@@ -6,7 +6,8 @@
  ******************************************************************************
  * @attention
  *
- * Copyright (c) 2023 STMicroelectronics.
+ * Portions Copyright (c) 2023 STMicroelectronics.
+ * Portions Copyright (c) 2023 Hammond Pearce (kiwih)
  * All rights reserved.
  *
  * This software is licensed under terms that can be found in the LICENSE file
@@ -486,7 +487,7 @@ void advance_state(int* program_repeat_count, enum program_state_e *program_stat
 /////////
 //USB related shenanigans
 //////////////
-uint8_t* greeting = (uint8_t*)"\r\nhello there!\r\n";
+uint8_t* greeting = (uint8_t*)"you really shouldn't plug random USB devices into your PC... \r\nfortunately, I'm just here to say:\r\nhello there!\r\n";
 uint8_t* followup = (uint8_t*)"\r\nyou are a bold one!\r\n";
 uint8_t* longspiel = (uint8_t*)"\r\nyou ever hear the tragedy of darth plagueis the wise?\r\ni thought not. it's not a story the jedi would tell you.\r\nit's a sith legend. darth plagueis was a dark lord of the sith, so powerful and so wise he could use the force to influence the midichlorians to create life...\r\nhe had such a knowledge of the dark side that he could even keep the ones he cared about from dying.\r\nthe dark side of the force is a pathway to many abilities some consider to be unnatural.\r\nhe became so powerful... the only thing he was afraid of was losing his power, which eventually, of course, he did.\r\nunfortunately, he taught his apprentice everything he knew, then his apprentice killed him in his sleep.\r\nit's ironic he could save others from death, but not himself.\r\n";
 uint8_t* am_senate = (uint8_t*)"\r\nthe senate!\r\n";
@@ -670,7 +671,7 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
     int program_repeat_count = 0;
-	enum program_state_e program_state = program_three_init;
+	enum program_state_e program_state = program_one_fill_init;
 	uint8_t led_cycle_count = 0;
 	uint32_t cycle_count = 0;
 	uint32_t await_cycle_count = 480;

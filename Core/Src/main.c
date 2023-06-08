@@ -282,6 +282,44 @@ uint8_t leds_program_two_step() {
 	return n_changed;
 }
 
+int8_t rand_small_nonzero_velocity() {
+	//return a random number between -3 and 3, not including 0
+	int8_t velocity = 0;
+	while(velocity == 0) {
+		velocity = (rand() % 7) - 3;
+	}
+	return velocity;
+}
+
+void leds_program_three_init(uint8_t fadeout) { //1 == fadeout, 0 == first startup
+	for(uint8_t i = 0; i < LEDS_N; i++) {
+		if(fadeout == 0) {
+			leds_status[i].brightness = 0;
+			leds_status[i].velocity = (rand() % 4); //first startup: no negative velocities to start with, but some zeros
+		} else {
+			leds_status[i].velocity = (rand() % 2) - 2; //fadeout: no positive velocities, no zero velocities
+		}
+	}
+}
+
+void leds_program_three_bounce_step() {
+	for(uint8_t i = 0; i < LEDS_N; i++) {
+		//if(leds_status[i].velocity != 0) {
+			if(leds_program_one_single_led_step(i) == 0) {
+				//sometimes we'll get negative velocities for something set to zero
+				//or positive ones for those set to max
+				//meaning they'll get a random delay the next cycle instead
+				//that's okay, they'll get a new velocity next cycle
+				leds_status[i].velocity = rand_small_nonzero_velocity();
+			}
+		//}
+	}
+}
+
+uint8_t leds_program_three_fade_out_step() {
+	return leds_program_two_step();
+}
+
 #define BASE_AWAIT_CYCLE_COUNT (LED_BRIGHTNESS_CYCLES * 1)
 
 enum program_state_e {
@@ -300,7 +338,8 @@ enum program_state_e {
 	program_two_unfill,
 
 	program_three_init,
-	program_three
+	program_three_bounce,
+	program_three_fadeout
 };
 
 void advance_state(int* program_repeat_count, enum program_state_e *program_state, uint32_t cycle_count, uint32_t *await_cycle_count) {
@@ -411,6 +450,32 @@ void advance_state(int* program_repeat_count, enum program_state_e *program_stat
 		break;
 
 	case program_three_init:
+		leds_program_three_init(0);
+		*await_cycle_count = BASE_AWAIT_CYCLE_COUNT * 3;
+		*program_state = program_three_bounce;
+		break;
+	case program_three_bounce:
+		leds_program_three_bounce_step();
+		*await_cycle_count = BASE_AWAIT_CYCLE_COUNT * 10;
+		if(*program_repeat_count < 400) {
+			*program_state = program_three_bounce;
+			(*program_repeat_count)++;
+		} else {
+			leds_program_three_init(1);
+			*program_state = program_three_fadeout;
+			(*program_repeat_count)=0;
+		}
+		break;
+	case program_three_fadeout:
+		if(leds_program_three_fade_out_step() == 0) {
+			*await_cycle_count = BASE_AWAIT_CYCLE_COUNT * 400;
+			if(cycle_count == BASE_AWAIT_CYCLE_COUNT * 400) {
+				*program_state = program_one_fill_init;
+				(*program_repeat_count)=0;
+				*await_cycle_count = 0;
+			}
+		}
+		break;
 
 
 	default:
@@ -605,7 +670,7 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
     int program_repeat_count = 0;
-	enum program_state_e program_state = program_one_fill_init;
+	enum program_state_e program_state = program_three_init;
 	uint8_t led_cycle_count = 0;
 	uint32_t cycle_count = 0;
 	uint32_t await_cycle_count = 480;
